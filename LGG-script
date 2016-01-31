@@ -1,4 +1,7 @@
-# READING DNA METHYLATION FILE NAMES
+# Download Illumina HumanMethylation450K data and RNA-SEQ V2 data from TCGA (https://tcga-data.nci.nih.gov/tcga/dataAccessMatrix.htm)
+and save on local directory X
+
+# READING DNA METHYLATION FILE NAMES into R
  
 setwd("/Volumes/X/LGG 2 2/DNA_Methylation/1")
 filenamesmeth<- list.files("LGG METHYLATION")
@@ -103,7 +106,6 @@ T<- read.table(filenamesmeth[inds[i,2]],header=F,stringsAsFactors=F,skip=2,sep="
 METHYLATION[,i]<- T[,2]
 cat(i)
 }
-
 
 # Filter out probes with more than 80% missing values:
 
@@ -223,10 +225,6 @@ range(box)
 write.table(box,"average local meth for boxplots in lgg.txt")
 
 
-# Correlation with methionine cycle genes
-
-setwd("/home/X/LGG")
-LGGEXP<- data.matrix(read.table("LGG expression of 534.txt"))
 
 # filter out low expression genes based on RSEM 3
 
@@ -253,139 +251,9 @@ MECEXP<- c(which(nGenenames=="MAT2B"), which(nGenenames=="MTR"), which(nGenename
 nGenenames[MECEXP]
 # MAT2B MTR   BHMT2 AHCY
 
-  # correlated Met cycle gene expression with global methylation:
-  
-globalC=c()
-globalP=c()
-for(i in 1:(dim(nLGGEXP)[1])){
-	globalC[i]<- cor.test(nLGGEXP[i,],averagemeth,method="spearman")$estimate
-	globalP[i]<- cor.test(nLGGEXP[i,],averagemeth,method="spearman")$p.value
-
-	
-}
-
-range(globalC)
-
-
--log10(globalP[MECEXP])
-
-globalC[MECEXP]
-
-
-setwd("/home/X/LGG")
-write.table(cbind(globalP,globalC), "genome wide LGG cors with average global meth.txt")
-
-  #correlated met cycle gene expression with local DNA methylation  (median pval)
-
-  
-MAT2B<- nLGGEXP[which(nGenenames=="MAT2B"),]
-MAT2BCORS=c()
-	for (i in 1:(dim(response)[1])){
-		MAT2BCORS[i]<- cor.test(MAT2B,as.numeric(response[i,3:(N+2)]), method="spearman" )$p.value
-
-	}
-median(MAT2BCORS,na.rm=TRUE)
-
- MAT2Bl<-  (length(which(MAT2BCORS<0.01))*100)/(dim(response)[1])
-  MAT2Bl
-
-MTR<- nLGGEXP[which(nGenenames=="MTR"),]
-MTRCORS=c()
-	for (i in 1:(dim(response)[1])){
-		MTRCORS[i]<- cor.test(MTR,as.numeric(response[i,3:(N+2)]), method="spearman" )$p.value
-
-	}
-median(MTRCORS,na.rm=TRUE)
-MTRl<-  (length(which(MTRCORS<0.01))*100)/(dim(response)[1])
-MTRl
-
-
-
-AHCY<- nLGGEXP[which(nGenenames=="AHCY"),]
-AHCYCORS=c()
-	for (i in 1:(dim(response)[1])){
-		AHCYCORS[i]<- cor.test(AHCY,as.numeric(response[i,3:(N+2)]), method="spearman" )$p.value
-
-	}
-
-median(AHCYCORS,na.rm=TRUE)
-
-AHl<- (length(which(AHCYCORS<0.01))*100)/(dim(response)[1])
-AHl
-
-
-
-BHMT2<- nLGGEXP[which(nGenenames=="BHMT2"),]
-BHCORS=c()
-	for (i in 1:(dim(response)[1])){
-		BHCORS[i]<- cor.test(BHMT2,as.numeric(response[i,3:(N+2)]), method="spearman" )$p.value
-
-	}
-
-median(BHCORS,na.rm=TRUE)
-
-
-BHl<- (length(which(BHCORS<0.01))*100)/(dim(response)[1])
-BHl
-
-# Supp F1 #
-
-# Global cors vs. local cors for 500 RANDOM genes in the genome :
-
-random<- sample(seq(1,(dim(nLGGEXP)[1])),500)
-randgenes<- nGenenames[random]
-   
-RANDCORS=matrix(0,500,(dim(response)[1]))  
-
-for(i in 1:500){
-	for (j in 1:(dim(response)[1])){
-		RANDCORS[i,j]<- cor.test(nLGGEXP[random[i],],as.numeric(response[j,3:(N+2)]), method="spearman" )$p.value
-	}
-	cat(i)
-} 
-       
-    
-sigcors=c()
-for(i in 1:500){
-	sigcors[i]<- (length(which(RANDCORS[i,]<0.01))*100)/(dim(response)[1])
-    
-} 
-
-A<- mean(sigcors,na.rm=TRUE)
-A
-
-
-GRANDCORS=c()  
-
-	for (i in 1:500){
-		GRANDCORS[i]<- cor.test(nLGGEXP[random[i],],averagemeth, method="spearman" )$p.value
-	}
-	
-B<- (length(which(GRANDCORS<0.01))*100)/500
-B
-
-fisher.test(matrix(c(length(which(RANDCORS<0.01)),(500*297),length(which(GRANDCORS<0.01)),500),ncol=2))
-
-
-range(sigcors)
-
-write.table(sigcors, "random 500 genes percent of sig cors with local meth in lgg.txt")
-
-length(which(sigcors>MAT2Bl))/500
-
-length(which(sigcors>MTRl))/500
-
-length(which(sigcors>AHl))/500
-
-length(which(sigcors>BHl))/500
-
-
 #**********#
 # FIGURE 2 #
 # *********#
-
-
-dim(response)
 
 ranges<- response[,1:2]
 response<- response[,-c(1,2)]
@@ -512,7 +380,7 @@ peaks.gr= GRanges (seqnames=peaks$chr,ranges=IRanges(start=peaks$start,end=peaks
 
 write.table(as.data.frame(peaks.gr),"common good bins IRANGES from MEC only in lgg.txt")
 
- # ( use GREAT for dist to TSS)
+ # ( export and use GREAT for dist to TSS)
 
 
 # MEC variable contributions:
@@ -803,7 +671,7 @@ write.table(as.data.frame(peaks.gr)," good bins with IRanges for GREAT all vars 
 
 #get distance to nearest TSS
 
- # ( use GREAT for dist to TSS)
+ # ( export and use GREAT for dist to TSS)
 
 # MEC vars contributions:
 
@@ -812,9 +680,7 @@ GmeanImp[MeC]
 
     rank(GmeanImp)[MeC]/W
 
-     
-
-
+    
 Gvaruse[(MeC+1)]
 
 Gvaruse[(MeC+1)]/(dim(peaks)[1]*3)
@@ -824,10 +690,10 @@ Gvar<- Gvaruse[-1]
 
 rank(Gvar)[MeC]/W 
 
-  AHCY     MAT2B       MTR     BHMT2 
-0.2700893 0.8772321 0.2968750 0.4575893
+#**********#
+# FIGURE 3 #
+# *********#
 
- 
 # Contribution of variable CLASSES (average)
 
 which(colnames(SAMvars)=="MAT2B") 
@@ -918,13 +784,9 @@ write.table(Elsum,"summary elastic net classes in lgg.txt")
 write.table(RFsum,"summary random forest classes in lgg.txt")
 
 # ********* #
-#  FIGURE 3 #
+#  FIGURE 4 #
 # ********* #
-
-
- # Pick best MEC gene based on correlation in fig 1 and 2
-
-
+ 
 # Spearman Cors for all probes with the top MEC gene (BHMT2 in LGG):
 
 BHMT2<- nLGGEXP[which(nGenenames=="BHMT2"),]
@@ -1030,7 +892,7 @@ write.table(peakannot, "peak annotatioins all peaks from sliging window for bhmt
 # distance to nearest TSS was found using GREAT
 
 
- # fig S4 : test of Met cycle specificity:
+ #  test of Met cycle specificity:
 
 
 speaks<- read.table("all BHMT2 peaks in LGG using sliding window.txt", row.names=NULL)
@@ -1106,7 +968,7 @@ setwd("/home/X/LGG")
 write.table(randpval,"lgg randomization p-values for 141 bhmt2 peaks in the window analysis.txt")
 
 # ******** #
-# FIGURE 4 # 
+# FIGURE 5 # 
 # ******** #
 
 
@@ -1749,7 +1611,7 @@ lggvaruse<- colSums(ELlgg)
 write.table(sort(lggvaruse), "STAR lgg ranks for prism.txt")
 
 # ******** #
-# Figure 5 #    
+# Figure 6 #    
 # ******** #
 
 
